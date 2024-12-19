@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: nginx-oci
+  name: nginx-oci
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-oci
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: nginx-oci
+    spec:
+      volumes:
+      - name: vol
+        hostPath:
+          path: /tmp
+      initContainers:
+#      - name: init-index-page
+#        image: busybox:1.28
+#        command: ['sh', '-c', "echo 'hola a todos' > /usr/share/nginx/html/index.html"]
+#        volumeMounts:
+#        - name: vol
+#          mountPath: /usr/share/nginx/html
+      - name: init-index-page
+        image: sergioarmgpl/oras
+        command: ['sh','-c','oras pull harbor-so1.cloudsociety.io/sopes1/ws-index:latest -o /usr/share/nginx/html']
+        volumeMounts:
+        - name: vol
+          mountPath: /usr/share/nginx/html
+      containers:
+      - image: nginx:latest
+        name: nginx
+        volumeMounts:
+        - name: vol
+          mountPath: /usr/share/nginx/html
+        resources: {}
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: nginx-oci
+  name: nginx-oci
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: nginx-oci
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-nginx-oci
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: 34.135.12.49.nip.io
+      http:
+        paths:
+          - pathType: Prefix
+            backend:
+              service:
+                name: nginx-oci
+                port:
+                  number: 80
+            path: /
+

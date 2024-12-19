@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: nginx-oci-v1
+  name: nginx-oci-v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-oci-v1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: nginx-oci-v1
+    spec:
+      volumes:
+      - name: vol
+        hostPath:
+          path: /tmp/v1
+      initContainers:
+#      - name: init-index-page
+#        image: busybox:1.28
+#        command: ['sh', '-c', "echo 'hola a todos' > /usr/share/nginx/html/index.html"]
+#        volumeMounts:
+#        - name: vol
+#          mountPath: /usr/share/nginx/html
+      - name: init-index-page
+        image: sergioarmgpl/oras
+        command: ['sh','-c','oras pull harbor-so1.cloudsociety.io/sopes1/ws-index:v1 -o /usr/share/nginx/html']
+        volumeMounts:
+        - name: vol
+          mountPath: /usr/share/nginx/html
+      containers:
+      - image: nginx
+        name: nginx
+        volumeMounts:
+        - name: vol
+          mountPath: /usr/share/nginx/html
+        resources: {}
+status: {}
